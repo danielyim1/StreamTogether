@@ -9,7 +9,7 @@
             let randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             console.log('clicked button');
             console.log(randomString);
-            window.location.href = "http://" + document.domain + ':' + location.port + '/session?id=' + randomString;
+            window.location.href = "http://" + document.domain + '/session?id=' + randomString;
         }
 
         $(document).ready(function() {

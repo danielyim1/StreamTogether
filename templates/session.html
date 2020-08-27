@@ -60,7 +60,7 @@
       var socket;
       function onPlayerReady(event) {
         console.log("on player ready");
-        socket = io.connect("http://" + document.domain + ':' + location.port);
+        socket = io.connect("http://" + document.domain);
         socket.on('connect', handleConnect);
 
         $(window).bind('beforeunload', function(){
