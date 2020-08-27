@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- https://stackoverflow.com/questions/42601478/flask-calling-python-function-on-button-onclick-event -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script> 
+  <script type=text/javascript>
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const sessionId = urlParams.get('id');// get url
+
+
+      //http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+      const clientId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+      function setVideo() {
+        socket.emit("set_video", sessionId, $('input#link')[0].value);
+      }
+
+      function uploadVideo(video_id) {
+        if (video_id == 'Invalid') {
+            alert("Invalid Youtube URL");
+        } else {
+          // $('div#message').append('<p>' + link + '</p>');
+          // $('iframe').prop("src",link);
+          // player.videoId = 'c943gFL-OUU';
+          player.loadVideoById(video_id);
+        }
+      }
+
+      function changeVideoState(isPlaying,currentTime) {
+        // console.log("video is started");
+        if (player.getPlayerState() == YT.PlayerState.PAUSED && isPlaying)  {
+          console.log(player.getPlayerState());
+          player.seekTo(currentTime,true);
+          player.playVideo();
+        }
+        else if (player.getPlayerState() == YT.PlayerState.PLAYING && !isPlaying) {
+          player.seekTo(currentTime,true);
+          player.pauseVideo();
+        }
+      }
+
+      function handle_message(message) {
+        console.log(message);
+      }
+      
+      function handleConnect() {
+        console.log("user is connected");
+        $('a#test').on('click',setVideo);
+
+        socket.on('upload_video',uploadVideo);
+        socket.on('change_video_state',changeVideoState);
+        socket.on('message',handle_message);
+
+        socket.emit('join', sessionId, clientId);
+      }
+
+      var socket;
+      function onPlayerReady(event) {
+        console.log("on player ready");
+        socket = io.connect("http://" + document.domain + ':' + location.port);
+        socket.on('connect', handleConnect);
+
+        $(window).bind('beforeunload', function(){
+          socket.emit('leave', sessionId, clientId);
+          return 'Are you sure you want to leave?';
+        });
+      }
+
+      function onPlayerStateChange(event) {
+        console.log(event);
+        if (event.data == YT.PlayerState.PLAYING) {
+          socket.emit('change_video',sessionId,true,event.target.getCurrentTime());
+        }
+        else if (event.data == YT.PlayerState.PAUSED) {
+          socket.emit('change_video',sessionId,false,event.target.getCurrentTime());
+        }
+      }
+
+      // Imports the youtube api script
+      var tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '390',
+          width: '640',
+          videoId: 'M7lc1UVf-VE',
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+        console.log(player);
+      }
+    </script>
+
+</head>
+
+<body>
+
+  <h1>StreamTogether</h1>
+
+
+  <a href=# id=test><button>Test</button></a>
+  <div id=message>
+
+  </div>
+  
+  <label for="link">Youtube link:</label><br>
+  <input type="text" id="link" name="link"><br>
+  
+  <div id="player"></div>
+</body>
+
+</html>
