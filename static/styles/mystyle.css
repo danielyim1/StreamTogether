@@ -1,0 +1,43 @@
+h1 {
+    font-size: 60px;
+    color: #fff;
+}
+
+.create_button {
+    width: 30%;
+    height: 50px;
+}
+
+body {
+    height: 100%;
+    background-color: #282c34;
+}
+
+label {
+    font-size: 20px;
+    color: #fff;
+}
+
+html {
+    height: 100%;
+}
+
+.fill {
+    min-height: 100%;
+    height: 100%;
+}
+
+button#submit {
+    width: 150px;
+}
+
+.embedded-video-16-9 {
+    width:  90vw;
+    height: 50.625vw; /* 90*9/16 */
+}
+
+.margin {
+    margin-left: 5vw;
+    margin-right: 5vw;
+    width: auto;
+}

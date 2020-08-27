@@ -4,25 +4,47 @@
 <head>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type=text/javascript>
+        var baseUrl;
+        if (location.port) {
+            baseUrl = "http://" + document.domain + ":" + location.port;
+        } else {
+            baseUrl = "https://" + document.domain;
+        }
+
+        function goHome() {
+          window.location.href = baseUrl;
+        }
+
         function createSession(){
             //https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
             let randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             console.log('clicked button');
             console.log(randomString);
-            window.location.href = "https://" + document.domain + '/session?id=' + randomString;
+            window.location.href = baseUrl + '/session?id=' + randomString;
         }
 
         $(document).ready(function() {
-            $('a#create').on('click',createSession);
+            $('button#create').on('click',createSession);
+            $('button#home').on('click', goHome);
         });
     </script>
+
+    <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
+        integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href= "{{ url_for('static',filename='styles/mystyle.css') }}">
 </head>
 
 <body>
-
-  <h1>StreamTogether</h1>
-
-  <a href=# id=create><button>Create Session</button></a>
+    <div class="text-center">
+      <button class="btn shadow-none text-center" id="home"><h1>Stream Together</h1></button>
+    </div>
+    <br />
+    <div class="text-center fill">
+        <button id=create class="btn btn-primary align-middle create_button">Create Session</button>
+    </div>
 </body>
 
 </html>
