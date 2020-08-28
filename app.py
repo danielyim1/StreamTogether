@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 from datetime import datetime
-from flask_socketio import SocketIO, join_room, leave_room
+from flask_socketio import SocketIO, join_room, leave_room, rooms
 import json
 import random
 import string
@@ -23,13 +23,13 @@ def session():
 @socketio.on('join')
 def handle_join(sessionId, clientId):
     join_room(sessionId)
-    socketio.emit('message', "JoinEvent: " + clientId + " has joined room", room=sessionId, include_self=False)
+    socketio.emit('join', clientId, room=sessionId, include_self=False)
     print(clientId, sessionId)
 
 @socketio.on('leave')
 def handle_leave(sessionId, clientId):
     leave_room(sessionId)
-    socketio.emit('message', "LeaveEvent: " + clientId + " has left room", room=sessionId, include_self=False)
+    socketio.emit('leave', clientId, room=sessionId, include_self=False)
 
 @socketio.on('change_video')
 def handle_change_video(sessionId, isPlaying,currentTime):
@@ -40,8 +40,8 @@ def handle_set_video(sessionId, id):
     socketio.emit('upload_video',id, room=sessionId)
 
 @socketio.on('send_heartbeat')
-def handle_heartbeat(sessionId, id, currentTime, isPlaying):
-    socketio.emit('get_heartbeat', data=(id, currentTime, isPlaying), room=sessionId, include_self=False)
+def handle_heartbeat(sessionId, id, currentTime, isPlaying, joinedNames):
+    socketio.emit('get_heartbeat', data=(id, currentTime, isPlaying, joinedNames), room=sessionId, include_self=False)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -1,10 +1,19 @@
-h1 {
-    font-size: 60px;
+h1, h4, h5, p {
     color: #fff;
 }
 
+h1 {
+    font-size: 60px;
+}
+
+.width-medium {
+    /* width: 30%; */
+    width: 350px;
+}
+
 .create_button {
-    width: 30%;
+    /* width: 30%; */
+    width: 350px;
     height: 50px;
 }
 
@@ -47,4 +56,39 @@ button#submit {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.button-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.col-centered {
+    margin: 0 auto;
+    float: none;
+}
+
+.alert {
+    /* width: min-content; */
+    border-radius: 15px;
+    margin: 5px;
+    border-color: none;
+    /* font-size: 14px;
+    padding: 10px; */
+}
+
+#joined-names {
+    flex-wrap: wrap;
+}
+
+.card {
+    margin: 0 auto;
+    float: none;
+    /* margin-left: 5vw;
+    margin-right: 5vw; */
+    /* width: auto; */
+    width: 450px;
+    background-color: #42464E;
+    padding: 10px;
 }

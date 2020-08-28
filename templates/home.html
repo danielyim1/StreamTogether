@@ -14,36 +14,74 @@
         function goHome() {
           window.location.href = baseUrl;
         }
+        
+        function getRandomRoomName() {
+            const length = 5;
+            var result = '';
+            var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            var charactersLength = characters.length;
+            for ( var i = 0; i < length; i++ ) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
 
         function createSession(){
             //https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-            let randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            console.log('clicked button');
-            console.log(randomString);
-            window.location.href = baseUrl + '/session?id=' + randomString;
+            let roomName = getRandomRoomName(); //Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            console.log(roomName);
+            window.location.href = baseUrl + '/session?id=' + roomName;
+        }
+
+        function joinSession() {
+            let sessionId = $('input#room-id')[0].value;
+            window.location.href = baseUrl + '/session?id=' + sessionId;
         }
 
         $(document).ready(function() {
             $('button#create').on('click',createSession);
             $('button#home').on('click', goHome);
+            $('button#join').on('click', joinSession);
         });
     </script>
 
     <!-- Latest compiled and minified CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
         integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
         crossorigin="anonymous"></script>
-    <link rel="stylesheet" type="text/css" href= "{{ url_for('static',filename='styles/mystyle.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/mystyle.css') }}">
 </head>
 
 <body>
     <div class="text-center">
-      <button class="btn shadow-none text-center" id="home"><h1>Stream Together</h1></button>
+        <button class="btn shadow-none text-center" id="home">
+            <h1>Stream Together</h1>
+        </button>
     </div>
     <br />
-    <div class="text-center fill">
-        <button id=create class="btn btn-primary align-middle create_button">Create Session</button>
+
+    <div class="card" style="padding-bottom: 0px;">
+        <div class="text-center">
+            <h4>Create a new room:</h4>
+        </div>
+        <div class="text-center mb-3">
+            <button id=create class="btn btn-primary align-middle create_button">Create room</button>
+        </div>
+    </div>
+    <br />
+
+    <div class="card" style="padding-bottom: 0px;">
+        <div class="text-center">
+            <h4>Or join an existing room:</h4>
+        </div>
+        <div class="col-centered input-group mb-3 width-medium">
+            <input id="room-id" type="text" class="form-control" placeholder="Room ID">
+            <div class="input-group-append">
+                <button id="join" class="btn btn-primary align-middle">Join</button>
+            </div>
+        </div>
     </div>
 </body>
 
