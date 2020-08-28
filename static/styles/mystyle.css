@@ -41,3 +41,10 @@ button#submit {
     margin-right: 5vw;
     width: auto;
 }
+
+.center-wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

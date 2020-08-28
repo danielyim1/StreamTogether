@@ -9,6 +9,7 @@
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
       const sessionId = urlParams.get('id');// get url
+      var heartbeatHandled = false;
 
       var baseUrl;
       if (location.port) {
@@ -19,64 +20,105 @@
 
       //https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
       const clientId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      var videoShown = false;
-      var ignoreStateChange = false;
+      // var videoShown = false;
 
-      function showVideo() {
-        if (!videoShown) {
-          videoShown = true;
-          document.getElementById("video").style.display = "block";
-        }
+      function getVideoId(url){
+        var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+        var match = url.match(regExp);
+        return (match&&match[7].length==11)? match[7] : false;
+      }
+
+      function showVideo(show=true) {
+        $('div#video')[0].style.display = show ? "block" : "none";
+      }
+
+      function showJoin(show=true) {
+        $('button#join')[0].style.display = show ? "block" : "none";
+        $('div#content')[0].style.display = show ? "none" : "block";
       }
 
       function setVideo() {
-        socket.emit("set_video", sessionId, $('input#link')[0].value);
-        showVideo();
-        ignoreStateChange = true; 
+        id = getVideoId($('input#link')[0].value);
+        if (id) {
+          showVideo(false);
+          socket.emit("set_video", sessionId, id);
+        } else {
+          alert("Invalid YouTube URL");
+        }
+        // showVideo();
       }
 
       function uploadVideo(video_id) {
-        if (video_id == 'Invalid') {
-            alert("Invalid Youtube URL");
-        } else {
-          showVideo();
-          ignoreStateChange = true; 
-          player.loadVideoById(video_id);
-        }
+        $('input#link')[0].value = 'https://www.youtube.com/watch?v=' + video_id;
+        showVideo();
+        player.cueVideoById(video_id);
+        // player.playVideo();
       }
 
-      function changeVideoState(isPlaying,currentTime) {
+      function getCurrentlyPlaying() {
+        let state = player.getPlayerState();
+        return !(state == YT.PlayerState.PAUSED
+          || state == YT.PlayerState.CUED
+          || state == YT.PlayerState.UNSTARTED
+          || state == YT.PlayerState.ENDED);
+      }
+
+      function changeVideoState(isPlaying, currentTime) {
         // console.log("video is started");
-        if (player.getPlayerState() == YT.PlayerState.PAUSED && isPlaying)  {
+        if (!getCurrentlyPlaying() && isPlaying)  {
           showVideo();
           player.seekTo(currentTime,true);
           player.playVideo();
-        }
-        else if (player.getPlayerState() == YT.PlayerState.PLAYING && !isPlaying) {
+        } else if (getCurrentlyPlaying() && !isPlaying) {
           showVideo();
           player.seekTo(currentTime,true);
           player.pauseVideo();
         }
       }
 
-      function handle_message(message) {
+      function handleMessage(message) {
         console.log(message);
+        if (message.startsWith('JoinEvent')) {
+          console.log('emit heartbeat');
+          socket.emit('send_heartbeat', sessionId, player.playerInfo.videoData.video_id, player.getCurrentTime(), getCurrentlyPlaying());
+        }
       }
 
       function goHome() {
         window.location.href = baseUrl;
       }
       
+      function joinSession() {
+        socket.emit('join', sessionId, clientId);
+        showJoin(false);
+        heartbeatHandled = false;
+      }
+
+      function handleHeartbeat(video_id, currentTime, isPlaying) {
+        console.log('handle hearbeat');
+        if (!heartbeatHandled && video_id) {
+          heartbeatHandled = true;
+          $('input#link')[0].value = 'https://www.youtube.com/watch?v=' + video_id;
+          showVideo();
+          player.cueVideoById(video_id, currentTime);
+          if (isPlaying) {
+            player.playVideo();
+          } else {
+            player.pauseVideo();
+          }
+        }
+      }
+
       function handleConnect() {
         console.log("user is connected");
         $('button#submit').on('click',setVideo);
         $('button#home').on('click', goHome);
+        $('button#join').on('click', joinSession);
 
-        socket.on('upload_video',uploadVideo);
-        socket.on('change_video_state',changeVideoState);
-        socket.on('message',handle_message);
-
-        socket.emit('join', sessionId, clientId);
+        socket.on('upload_video', uploadVideo);
+        socket.on('change_video_state', changeVideoState);
+        socket.on('message', handleMessage);
+        socket.on('get_heartbeat', handleHeartbeat);
       }
 
       var socket;
@@ -85,17 +127,13 @@
         socket = io.connect(baseUrl);
         socket.on('connect', handleConnect);
 
-        $(window).bind('beforeunload', function(){
+        $(window).bind('beforeunload', function() {
           socket.emit('leave', sessionId, clientId);
           return 'Are you sure you want to leave?';
         });
       }
 
       function onPlayerStateChange(event) {
-        if (ignoreStateChange) {
-          ignoreStateChange = false;
-          return;
-        }
         console.log(event);
         if (event.data == YT.PlayerState.PLAYING) {
           socket.emit('change_video',sessionId,true,event.target.getCurrentTime());
@@ -116,7 +154,7 @@
         player = new YT.Player('player', {
           height: '100%',
           width: '100%',
-          videoId: 'M7lc1UVf-VE',
+          videoId: '',
           events: {
             'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
@@ -125,7 +163,8 @@
       }
 
       $(document).ready(function() {
-        document.getElementById("video").style.display = "none";
+        showVideo(false);
+        showJoin(true);
       });
     </script>
 
@@ -148,16 +187,22 @@
   </div>
   <br />
 
-  <div class="input-group mb-3 margin">
-    <input type="text" id="link" name="link" class="form-control" placeholder="Type in YouTube link here...">
-    <div class="input-group-append">
-      <button id=submit class="btn btn-primary align-middle">Submit</button>
+  <div id="content">
+    <div class="input-group mb-3 margin">
+      <input type="text" id="link" name="link" class="form-control" placeholder="Type in YouTube link here...">
+      <div class="input-group-append">
+        <button id=submit class="btn btn-primary align-middle">Submit</button>
+      </div>
+    </div>
+    <br />
+  
+    <div class="embedded-video-16-9 margin" id="video">
+      <div id="player"></div>
     </div>
   </div>
-  <br />
 
-  <div class="embedded-video-16-9 margin" id="video">
-    <div id="player"></div>
+  <div class="center-wrapper">
+    <button id=join class="btn btn-primary align-middle">Join Session</button>
   </div>
 </body>
 

@@ -10,7 +10,6 @@ socketio = SocketIO(app)
 
 @app.route('/')
 def home():
-    # print(render_template("home.html"))
     return render_template("home.html")
 
 @app.route('/session') # ?id=foo
@@ -21,44 +20,28 @@ def session():
     # socketio.enter_room(clientId, sessionId)
     return render_template("session.html")
 
-# @app.route('/synconline')
-# def sync():
-#     data = {"Time": datetime.now().strftime("%H:%M:%S")}
-#     return json.dumps(data)
-
 @socketio.on('join')
 def handle_join(sessionId, clientId):
     join_room(sessionId)
-    socketio.emit('message', clientId + " has joined room", room=sessionId)
+    socketio.emit('message', "JoinEvent: " + clientId + " has joined room", room=sessionId, include_self=False)
     print(clientId, sessionId)
 
 @socketio.on('leave')
 def handle_leave(sessionId, clientId):
     leave_room(sessionId)
-    socketio.emit('message', clientId + " has left room", room=sessionId)
+    socketio.emit('message', "LeaveEvent: " + clientId + " has left room", room=sessionId, include_self=False)
 
 @socketio.on('change_video')
 def handle_change_video(sessionId, isPlaying,currentTime):
-    socketio.emit('change_video_state',data= (isPlaying,currentTime), room=sessionId)
-
+    socketio.emit('change_video_state',data=(isPlaying, currentTime), room=sessionId)
 
 @socketio.on('set_video')
-def handle_set_video(sessionId, link):
-    # https://www.youtube.com/watch?v=OPaGNHYR8fg&feature=emb_logo
-    # https://www.youtube.com/embed/OPaGNHYR8fg
-    starting = link.find('?v=') + 3
-    if starting != 2:
-        id = link[starting:]
-        if id.find('&') != -1:
-            id = id[:id.find('&')] 
-        # newLink = "https://www.youtube.com/embed/" + id
-        # print(newLink)
-        # print()
-    else:
-        # newLink="Invalid"
-        id = "Invalid"
-        print("Invalid video id")
-        print()
+def handle_set_video(sessionId, id):
     socketio.emit('upload_video',id, room=sessionId)
+
+@socketio.on('send_heartbeat')
+def handle_heartbeat(sessionId, id, currentTime, isPlaying):
+    socketio.emit('get_heartbeat', data=(id, currentTime, isPlaying), room=sessionId, include_self=False)
+
 if __name__ == '__main__':
     socketio.run(app, debug=True)
