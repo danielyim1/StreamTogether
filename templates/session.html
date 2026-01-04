@@ -4,7 +4,7 @@
 <head>
   <!-- https://stackoverflow.com/questions/42601478/flask-calling-python-function-on-button-onclick-event -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+  <script src="https://cdn.socket.io/5.3.3/socket.io.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.4.0/clipboard.min.js"></script>
   <script type=text/javascript>
       const queryString = window.location.search;
@@ -162,7 +162,9 @@
       var socket;
       function onPlayerReady(event) {
         console.log("on player ready");
-        socket = io.connect(baseUrl);
+        socket = io(baseUrl, {
+          transports: ['websocket', 'polling'] // WebSocket first, fallback to polling
+        });
         socket.on('connect', handleConnect);
 
         $(window).bind('beforeunload', function() {
