@@ -2,6 +2,10 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamTogether - Watch Videos Together</title>
+    
     <!-- Load jQuery first -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
@@ -31,6 +35,10 @@
 
         function joinSession() {
             let sessionId = $('#room-id').val();
+            if (sessionId.trim() === '') {
+                alert('Please enter a Room ID');
+                return;
+            }
             window.location.href = baseUrl + '/session?id=' + sessionId;
         }
 
@@ -38,6 +46,13 @@
             $('#create').on('click', createSession);
             $('#home').on('click', goHome);
             $('#join').on('click', joinSession);
+            
+            // Allow Enter key to join room
+            $('#room-id').on('keypress', function(e) {
+                if (e.which === 13) {
+                    joinSession();
+                }
+            });
         });
     </script>
 
@@ -51,32 +66,41 @@
 </head>
 
 <body>
-    <div class="text-center">
-        <button class="btn shadow-none text-center" id="home">
-            <h1>Stream Together</h1>
-        </button>
-    </div>
-    <br />
-
-    <div class="card" style="padding-bottom: 0px;">
+    <div class="container">
         <div class="text-center">
-            <h4>Create a new room:</h4>
+            <button class="btn shadow-none text-center" id="home" style="background: transparent; border: none;">
+                <h1>🎬 StreamTogether</h1>
+            </button>
+            <p style="color: white; font-size: 1.2rem; margin-bottom: 3rem;">Watch YouTube videos together in perfect sync</p>
         </div>
-        <div class="text-center mb-3">
-            <button id="create" class="btn btn-primary align-middle create_button">Create room</button>
-        </div>
-    </div>
-    <br />
 
-    <div class="card" style="padding-bottom: 0px;">
-        <div class="text-center">
-            <h4>Or join an existing room:</h4>
-        </div>
-        <div class="col-centered input-group mb-3 width-medium">
-            <input id="room-id" type="text" class="form-control" placeholder="Room ID">
-            <div class="input-group-append">
-                <button id="join" class="btn btn-primary align-middle">Join</button>
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-body text-center">
+                <h4 style="margin-bottom: 1rem;">Create a New Room</h4>
+                <p class="text-muted">Start a watch party and invite your friends</p>
+                <button id="create" class="btn btn-primary create_button">
+                    🚀 Create Room
+                </button>
             </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h4 class="text-center" style="margin-bottom: 1rem;">Join an Existing Room</h4>
+                <p class="text-muted text-center">Have a room code? Enter it below</p>
+                <div class="col-centered input-group mb-3 width-medium">
+                    <input id="room-id" type="text" class="form-control" placeholder="Enter Room ID" style="text-transform: uppercase;">
+                    <div class="input-group-append">
+                        <button id="join" class="btn btn-primary">Join</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                ✨ Watch videos in sync • 💬 Chat with friends • 🎉 Share moments together
+            </p>
         </div>
     </div>
 </body>
