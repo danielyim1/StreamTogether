@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, join_room, leave_room
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "change-me-in-production"
 
-socketio = SocketIO(app, async_mode="eventlet", cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=True, engineio_logger=True)
 
 @app.route('/')
 def home():

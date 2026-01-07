@@ -7,6 +7,9 @@
     <!-- jQuery (needed for $) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
+    <!-- Socket.IO client library (REQUIRED!) -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
     <!-- Clipboard.js (needed for new Clipboard(...)) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
 
@@ -68,10 +71,10 @@
         }
 
         function setJoinedNames() {
-            $('div#joined-names').empty();
+            $('#joined-names').empty();
             joinedNames.forEach(id => {
                 let style = id == clientId ? 'style="background-color: #28a745; border-color: #28a745; color: #fff"' : '';
-                $('div#joined-names').append('<div class="alert alert-primary" ' + style + ' role="alert">' + id + '</div>');
+                $('#joined-names').append('<div class="alert alert-primary" ' + style + ' role="alert">' + id + '</div>');
             });
         }
 
@@ -82,16 +85,27 @@
         }
 
         function showVideo(show=true) {
-            $('div#video')[0].style.display = show ? "block" : "none";
+            const videoElement = $('#video')[0];  // Remove 'div#' - just use '#video'
+            if (videoElement) {
+                videoElement.style.display = show ? "block" : "none";
+                console.log('showVideo called, display set to:', videoElement.style.display);
+            } else {
+                console.log('WARNING: video element not found!');
+            }
         }
 
         function showJoin(show=true) {
-            $('div#join-content')[0].style.display = show ? "block" : "none";
-            $('div#content')[0].style.display = show ? "none" : "block";
+            const joinDiv = $('#join-content')[0];
+            const contentDiv = $('#content')[0];
+            if (joinDiv) joinDiv.style.display = show ? "block" : "none";
+            if (contentDiv) contentDiv.style.display = show ? "none" : "block";
         }
 
         function setVideo() {
-            const id = getVideoId($('input#link')[0].value);
+            const linkInput = $('input#link')[0];
+            if (!linkInput) return;
+            
+            const id = getVideoId(linkInput.value);
             if (id) {
                 showVideo(false);
                 socket.emit("set_video", { sessionId: sessionId, id: id });
@@ -101,17 +115,28 @@
         }
 
         function uploadVideo(video_id) {
-            $('input#link')[0].value = 'https://www.youtube.com/watch?v=' + video_id;
+            console.log('uploadVideo called with id:', video_id);
+            const linkInput = $('input#link')[0];
+            if (linkInput) {
+                linkInput.value = 'https://www.youtube.com/watch?v=' + video_id;
+            }
             showVideo();
-            player.cueVideoById(video_id);
+            if (player && player.cueVideoById) {
+                console.log('Calling player.cueVideoById');
+                player.cueVideoById(video_id);
+            } else {
+                console.log('Player not ready:', player);
+            }
         }
 
         function getCurrentlyPlaying() {
+            if (!player || !player.getPlayerState) return false;
             let state = player.getPlayerState();
             return !(state == YT.PlayerState.PAUSED || state == YT.PlayerState.CUED || state == YT.PlayerState.UNSTARTED || state == YT.PlayerState.ENDED);
         }
 
         function changeVideoState(data) {
+            if (!player) return;
             const { isPlaying, currentTime } = data;
             if (!getCurrentlyPlaying() && isPlaying)  {
                 showVideo();
@@ -127,13 +152,15 @@
         function handleJoin(otherId) {
             joinedNames.push(otherId);
             setJoinedNames();
-            socket.emit('send_heartbeat', {
-                sessionId: sessionId,
-                id: player.playerInfo.videoData.video_id,
-                currentTime: player.getCurrentTime(),
-                isPlaying: getCurrentlyPlaying(),
-                joinedNames: joinedNames
-            });
+            if (player && player.playerInfo && player.playerInfo.videoData) {
+                socket.emit('send_heartbeat', {
+                    sessionId: sessionId,
+                    id: player.playerInfo.videoData.video_id,
+                    currentTime: player.getCurrentTime(),
+                    isPlaying: getCurrentlyPlaying(),
+                    joinedNames: joinedNames
+                });
+            }
         }
 
         function handleLeave(otherId) {
@@ -146,7 +173,10 @@
         }
 
         function joinSession() {
-            clientId = $('input#client-id')[0].value;
+            const clientIdInput = $('input#client-id')[0];
+            if (!clientIdInput) return;
+            
+            clientId = clientIdInput.value;
             socket.emit('join', { sessionId: sessionId, clientId: clientId });
             showJoin(false);
             joinedNames.push(clientId);
@@ -159,8 +189,11 @@
                 heartbeatHandled = true;
                 joinedNames = data.joinedNames;
                 setJoinedNames();
-                if (data.id) {
-                    $('input#link')[0].value = 'https://www.youtube.com/watch?v=' + data.id;
+                if (data.id && player) {
+                    const linkInput = $('input#link')[0];
+                    if (linkInput) {
+                        linkInput.value = 'https://www.youtube.com/watch?v=' + data.id;
+                    }
                     showVideo();
                     player.cueVideoById(data.id, data.currentTime);
                     if (data.isPlaying) player.playVideo();
@@ -169,11 +202,10 @@
             }
         }
 
+        var socket;
+        
         function handleConnect() {
-            $('button#submit').on('click', setVideo);
-            $('button#home').on('click', goHome);
-            $('button#join').on('click', joinSession);
-
+            console.log('Socket connected!');
             socket.on('upload_video', uploadVideo);
             socket.on('change_video_state', changeVideoState);
             socket.on('join', handleJoin);
@@ -181,15 +213,8 @@
             socket.on('get_heartbeat', handleHeartbeat);
         }
 
-        var socket;
         function onPlayerReady(event) {
-            socket = io(baseUrl, { transports: ['websocket', 'polling'] });
-            socket.on('connect', handleConnect);
-
-            $(window).bind('beforeunload', function() {
-                socket.emit('leave', { sessionId: sessionId, clientId: clientId });
-                return 'Are you sure you want to leave?';
-            });
+            // Player is ready, nothing special needed here
         }
 
         function onPlayerStateChange(event) {
@@ -219,10 +244,35 @@
         $(document).ready(function() {
             showVideo(false);
             showJoin(true);
-            $('#room-title').text('Room ' + sessionId);
-            $('input#post-shortlink')[0].value = window.location.href;
-            $('input#client-id')[0].value = getRandomName();
-            new Clipboard('#copy-button');
+            
+            const roomTitle = $('#room-title')[0];
+            if (roomTitle) roomTitle.textContent = 'Room ' + sessionId;
+            
+            const shortlink = $('input#post-shortlink')[0];
+            if (shortlink) shortlink.value = window.location.href;
+            
+            const clientIdInput = $('input#client-id')[0];
+            if (clientIdInput) clientIdInput.value = getRandomName();
+            
+            // Initialize Clipboard with error handling
+            if (typeof ClipboardJS !== 'undefined') {
+                new ClipboardJS('#copy-button');
+            }
+
+            // Initialize socket connection immediately (use polling only)
+            socket = io(baseUrl, { transports: ['polling'] });
+            socket.on('connect', handleConnect);
+
+            // Set up button handlers immediately
+            $('button#submit').on('click', setVideo);
+            $('button#home').on('click', goHome);
+            $('button#join').on('click', joinSession);
+
+            // Handle page unload
+            $(window).bind('beforeunload', function() {
+                socket.emit('leave', { sessionId: sessionId, clientId: clientId });
+                return 'Are you sure you want to leave?';
+            });
         });
     </script>
 </body>
