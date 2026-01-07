@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, join_room, leave_room
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "change-me-in-production"
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=True, engineio_logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def home():
@@ -59,6 +59,17 @@ def handle_heartbeat(data):
         {'id': video_id, 'currentTime': currentTime, 'isPlaying': isPlaying, 'joinedNames': joinedNames},
         room=sessionId,
         include_self=False
+    )
+
+@socketio.on('send_message')
+def handle_message(data):
+    sessionId = data['sessionId']
+    clientId = data['clientId']
+    message = data['message']
+    socketio.emit(
+        'receive_message',
+        {'clientId': clientId, 'message': message},
+        room=sessionId
     )
 
 # ---------------- Run App ---------------- #
